@@ -76,7 +76,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.fortune.fortuneserver.FortuneServerApplication</mainClass>
                     <skip>true</skip>
                 </configuration>
                 <executions>

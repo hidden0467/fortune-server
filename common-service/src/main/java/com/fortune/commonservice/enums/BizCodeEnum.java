@@ -6,7 +6,10 @@ import lombok.Getter;
 public enum BizCodeEnum {
 
     SUCCESS(0, "请求成功"),
-    ERROR(-1, "请求失败");
+    ERROR(-1, "请求失败"),
+    BAD_REQUEST(400, "请求参数不合法"),
+    NOT_FOUND(404, "资源不存在"),
+    INTERNAL_ERROR(500, "系统异常");
 
 
     /**
