@@ -1,14 +1,15 @@
-# 使用官方 OpenJDK 17 镜像作为基础镜像
+# Dockerfile
+# 使用官方 OpenJDK 17 镜像
 FROM openjdk:17-jdk-slim
 
-# 在镜像中创建应用目录
+# 设置工作目录
 WORKDIR /app
 
-# 将打包后的 jar 复制到镜像
+# 拷贝构建好的 jar 文件到镜像
 COPY target/fortune-server.jar app.jar
 
-# 对外暴露端口（和 Spring Boot 配置一致）
+# 暴露应用端口（Spring Boot 默认 8080）
 EXPOSE 8080
 
-# 设置启动命令
+# 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]
