@@ -1,15 +1,13 @@
-# Dockerfile
-# 使用官方 OpenJDK 17 镜像
-FROM openjdk:17
-
-# 设置工作目录
+# Stage 1: Maven build
+FROM maven:3.8.8-openjdk-17 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# 拷贝构建好的 jar 文件到镜像
-COPY target/fortune-server.jar app.jar
-
-# 暴露应用端口（Spring Boot 默认 8080）
+# Stage 2: Run stage
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=build /app/target/fortune-server.jar app.jar
 EXPOSE 8080
-
-# 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]
