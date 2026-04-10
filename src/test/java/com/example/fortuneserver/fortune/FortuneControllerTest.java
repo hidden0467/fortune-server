@@ -2,6 +2,7 @@ package com.example.fortuneserver.fortune;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,29 +29,59 @@ class FortuneControllerTest {
     }
 
     @Test
-    void shouldReturnPersonalizedFortune() throws Exception {
+    void shouldBuildTushareQueryWithCombinedConditions() throws Exception {
         mockMvc.perform(post("/api/v1/fortune")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                      "name": "Cursor",
-                      "topic": "CI/CD"
+                      "input": "帮我筛选上证的广东股票"
                     }
                     """))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.recipient").value("Cursor"))
-            .andExpect(jsonPath("$.topic").value("CI/CD"))
-            .andExpect(jsonPath("$.message").isNotEmpty());
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.input").value("帮我筛选上证的广东股票"))
+            .andExpect(jsonPath("$.apiName").value("stock_basic"))
+            .andExpect(jsonPath("$.params.exchange").value("SSE"))
+            .andExpect(jsonPath("$.params.area").value("广东"))
+            .andExpect(jsonPath("$.filters.roe").value("> 0"))
+            .andExpect(jsonPath("$.filters.netProfit").value("> 0"));
     }
 
     @Test
-    void shouldRejectBlankName() throws Exception {
+    void shouldMapShanghaiToExchangeAndArea() throws Exception {
         mockMvc.perform(post("/api/v1/fortune")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                      "name": "",
-                      "topic": "CI/CD"
+                      "input": "请找一下上海的股票"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.params.exchange").value("SSE"))
+            .andExpect(jsonPath("$.params.area").value("上海"));
+    }
+
+    @Test
+    void shouldMapShenzhenToExchangeAndArea() throws Exception {
+        mockMvc.perform(post("/api/v1/fortune")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "input": "想看深圳本地的股票"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.params.exchange").value("SZSE"))
+            .andExpect(jsonPath("$.params.area").value("深圳"));
+    }
+
+    @Test
+    void shouldRejectBlankInput() throws Exception {
+        mockMvc.perform(post("/api/v1/fortune")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "input": ""
                     }
                     """))
             .andExpect(status().isBadRequest())

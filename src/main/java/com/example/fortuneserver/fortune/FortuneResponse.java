@@ -1,11 +1,11 @@
 package com.example.fortuneserver.fortune;
 
-import java.time.OffsetDateTime;
+import java.util.Map;
 
 public record FortuneResponse(
-    String recipient,
-    String topic,
-    String message,
-    OffsetDateTime generatedAt
+    String input,
+    String apiName,
+    Map<String, String> params,
+    Map<String, String> filters
 ) {
 }
