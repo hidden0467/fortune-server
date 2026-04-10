@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: fortune-server
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Spring Boot project skeleton ready for CI/CD pipelines.
