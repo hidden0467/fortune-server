@@ -62,6 +62,12 @@ mvnw.cmd spring-boot:run
 SERVER_PORT=9090 ./mvnw spring-boot:run
 ```
 
+如果要接入真实 Tushare Token，可额外设置：
+
+```bash
+TUSHARE_TOKEN=your-token ./mvnw spring-boot:run
+```
+
 ### 2. 运行测试
 
 ```bash
@@ -94,13 +100,35 @@ curl http://localhost:8080/actuator/health
 curl http://localhost:8080/api/v1/info
 ```
 
-### 生成示例响应
+### Tushare 查询参数转换
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/fortune \
   -H "Content-Type: application/json" \
-  -d '{"name":"Alice","topic":"deployment"}'
+  -d '{"input":"帮我筛选上证的广东股票"}'
 ```
+
+也可以使用更语义化的接口：
+
+```bash
+curl -X POST http://localhost:8080/api/v1/tushare/query \
+  -H "Content-Type: application/json" \
+  -d '{"input":"想看深圳本地的股票"}'
+```
+
+### 首页
+
+启动后直接访问：
+
+```bash
+http://localhost:8080/
+```
+
+首页支持：
+
+- 输入自然语言生成 Tushare `stock_basic` 查询参数
+- 显示是否已配置 `TUSHARE_TOKEN`
+- 展示固定筛选条件：`roe > 0`、`netProfit > 0`
 
 ## Docker
 

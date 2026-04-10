@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tushare 查询助手</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 32px;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .status.ok {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status.warn {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            padding: 14px 16px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 16px;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #93c5fd;
+            cursor: wait;
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .example-btn {
+            margin-top: 0;
+            background: #e2e8f0;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .muted {
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <section class="card">
+        <h1>Tushare 查询助手</h1>
+        <p>输入自然语言描述，系统会将内容转换为 Tushare <code>stock_basic</code> 查询参数，并固定补充 <code>roe &gt; 0</code>、<code>netProfit &gt; 0</code> 条件。</p>
+        <div id="token-status" class="status warn">正在检查 Tushare Token 配置...</div>
+        <p class="muted">后端只暴露“是否已配置”，不会把真实 Token 返回到页面。</p>
+    </section>
+
+    <section class="card">
+        <label for="query-input">自然语言输入</label>
+        <textarea id="query-input" placeholder="例如：帮我筛选上证的广东股票"></textarea>
+        <div class="examples">
+            <button type="button" class="example-btn" data-example="帮我筛选上证的广东股票">上证 + 广东</button>
+            <button type="button" class="example-btn" data-example="想看深圳本地的股票">深圳</button>
+            <button type="button" class="example-btn" data-example="帮我找北京的股票">北京</button>
+        </div>
+        <button id="submit-btn" type="button">生成查询参数</button>
+        <div id="error-message" class="error" hidden></div>
+    </section>
+
+    <section class="card">
+        <h2>返回结果</h2>
+        <pre id="result-panel">等待输入...</pre>
+    </section>
+</main>
+
+<script>
+    const tokenStatus = document.getElementById("token-status");
+    const input = document.getElementById("query-input");
+    const submitBtn = document.getElementById("submit-btn");
+    const resultPanel = document.getElementById("result-panel");
+    const errorMessage = document.getElementById("error-message");
+
+    async function loadStatus() {
+        try {
+            const response = await fetch("/api/v1/tushare/config");
+            const data = await response.json();
+            if (data.tokenConfigured) {
+                tokenStatus.textContent = "Tushare Token 已配置";
+                tokenStatus.className = "status ok";
+            } else {
+                tokenStatus.textContent = "Tushare Token 未配置，请设置环境变量 TUSHARE_TOKEN";
+                tokenStatus.className = "status warn";
+            }
+        } catch (error) {
+            tokenStatus.textContent = "无法获取 Token 状态";
+            tokenStatus.className = "status warn";
+        }
+    }
+
+    async function submitQuery() {
+        errorMessage.hidden = true;
+        submitBtn.disabled = true;
+        resultPanel.textContent = "正在生成查询参数...";
+
+        try {
+            const response = await fetch("/api/v1/tushare/query", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ input: input.value })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const message = data.details ? data.details.join("\n") : (data.error || "请求失败");
+                throw new Error(message);
+            }
+
+            resultPanel.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+            resultPanel.textContent = "生成失败";
+            errorMessage.textContent = error.message;
+            errorMessage.hidden = false;
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    document.querySelectorAll(".example-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+            input.value = button.dataset.example;
+            submitQuery();
+        });
+    });
+
+    submitBtn.addEventListener("click", submitQuery);
+    loadStatus();
+</script>
+</body>
+</html>

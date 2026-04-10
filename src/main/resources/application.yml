@@ -22,3 +22,6 @@ info:
   app:
     name: ${spring.application.name}
     description: Spring Boot project skeleton ready for CI/CD pipelines.
+
+tushare:
+  token: ${TUSHARE_TOKEN:}

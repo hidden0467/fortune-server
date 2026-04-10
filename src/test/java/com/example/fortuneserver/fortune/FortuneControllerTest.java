@@ -29,6 +29,21 @@ class FortuneControllerTest {
     }
 
     @Test
+    void shouldExposeMaskedTushareConfigState() throws Exception {
+        mockMvc.perform(get("/api/v1/tushare/config"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.tokenConfigured").value(false));
+    }
+
+    @Test
+    void shouldServeHomePage() throws Exception {
+        mockMvc.perform(get("/"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Tushare 查询助手")));
+    }
+
+    @Test
     void shouldBuildTushareQueryWithCombinedConditions() throws Exception {
         mockMvc.perform(post("/api/v1/fortune")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -45,6 +60,21 @@ class FortuneControllerTest {
             .andExpect(jsonPath("$.params.area").value("广东"))
             .andExpect(jsonPath("$.filters.roe").value("> 0"))
             .andExpect(jsonPath("$.filters.netProfit").value("> 0"));
+    }
+
+    @Test
+    void shouldBuildTushareQueryFromDedicatedEndpoint() throws Exception {
+        mockMvc.perform(post("/api/v1/tushare/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "input": "帮我筛选深成的北京股票"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.apiName").value("stock_basic"))
+            .andExpect(jsonPath("$.params.exchange").value("SZSE"))
+            .andExpect(jsonPath("$.params.area").value("北京"));
     }
 
     @Test
